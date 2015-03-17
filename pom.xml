@@ -1,0 +1,221 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>se.lth.immun</groupId>
+  <artifactId>Dinosaur</artifactId>
+  <version>0.0.1</version>
+  <inceptionYear>2015</inceptionYear>
+  <properties>
+    <scala.version>2.10.0</scala.version>
+    <short.name>dinosaur</short.name>
+    <mainClass>se.lth.immun.Dinosaur</mainClass>
+    <script.file>target/${short.name}</script.file>
+    <selfContained.jar>${basedir}/target/${build.finalName}-jar-with-dependencies.jar</selfContained.jar>
+  </properties>
+  
+  <dependencies>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.9</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.scalatest</groupId>
+    	<artifactId>scalatest_${scala.version}</artifactId>
+    	<version>2.0.M5</version>
+    	<scope>test</scope>
+    </dependency>
+
+  	<dependency>
+  		<groupId>se.lth.immun</groupId>
+  		<artifactId>MzML</artifactId>
+  		<version>1.2.3</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>se.lth.immun</groupId>
+  		<artifactId>Xml</artifactId>
+  		<version>1.0.0</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>se.lth.immun</groupId>
+  		<artifactId>ExtendedSeparatedValues</artifactId>
+  		<version>1.0.0</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>se.lth.immun</groupId>
+  		<artifactId>Proteins</artifactId>
+  		<version>1.1.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>se.lth.immun</groupId>
+  		<artifactId>UniMod</artifactId>
+  		<version>1.0.0</version>
+  	</dependency>
+    <dependency>
+    	<groupId>com.typesafe.akka</groupId>
+    	<artifactId>akka-actor_2.10</artifactId>
+    	<version>2.3.9</version>
+    </dependency>
+    <dependency>
+    	<groupId>se.jt</groupId>
+    	<artifactId>CLIApp</artifactId>
+    	<version>1.0.0</version>
+    </dependency>
+    <dependency>
+    	<groupId>se.lth.immun</groupId>
+    	<artifactId>Graphs</artifactId>
+    	<version>1.0.0</version>
+    </dependency>
+  </dependencies>
+  
+  <repositories>
+    <repository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </repository>
+  </repositories>
+  
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <artifactId>maven-eclipse-plugin</artifactId>
+        <configuration>
+          <downloadSources>true</downloadSources>
+          <buildcommands>
+            <buildcommand>ch.epfl.lamp.sdt.core.scalabuilder</buildcommand>
+          </buildcommands>
+          <additionalProjectnatures>
+            <projectnature>ch.epfl.lamp.sdt.core.scalanature</projectnature>
+          </additionalProjectnatures>
+          <classpathContainers>
+            <classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
+            <classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER</classpathContainer>
+          </classpathContainers>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+	    <artifactId>maven-assembly-plugin</artifactId>
+	    <configuration>
+	      <descriptorRefs>
+	        <descriptorRef>jar-with-dependencies</descriptorRef>
+	      </descriptorRefs>
+	      <archive>
+            <manifest>
+              <mainClass>${mainClass}</mainClass>
+            </manifest>
+          </archive>
+	    </configuration>
+	    <executions>
+          <execution>
+            <id>make-assembly</id> <!-- this is used for inheritance merges -->
+            <phase>package</phase> <!-- bind to the packaging phase -->
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+	  </plugin>
+	  
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.9</version>
+        <configuration>
+          <includes>
+            <include>**/*Test.*</include>
+          </includes>
+          <excludes>
+			<exclude>**/*IntegrationTest.*</exclude>
+			<exclude>**/*IT.*</exclude>
+          </excludes>
+          <!--<debugForkedProcess>true</debugForkedProcess>  -->
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>2.6</version>
+    	<configuration>
+          <includes>
+            <include>**/*IntegrationTest.*</include>
+            <include>**/*IT.*</include>
+          </includes>
+          <workingDirectory>target/test-classes</workingDirectory>
+    	</configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+	    </executions>
+	  </plugin>
+      
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <id>install shortcut script</id>
+            <phase>install</phase>
+            <configuration>
+              <target>
+              	<echo message="creating shortcut script '${script.file}'"/>
+				<echo file="${script.file}">#!/bin/bash 
+java -jar ${selfContained.jar} "$@"
+				</echo>
+				<chmod file="${script.file}" perm="755"/>
+				<echo message="changed '${script.file}' permissions to 755"/>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
