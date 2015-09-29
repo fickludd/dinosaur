@@ -1,7 +1,5 @@
 package se.lth.immun
 
-import akka.actor._
-
 import java.io.File
 import java.io.IOException
 import java.awt.Color
@@ -13,39 +11,34 @@ import javax.imageio.ImageIO
 import se.lth.immun.graphs.LineGraph
 import se.lth.immun.graphs.util._
 
-object CentroidReportActor {
-	
-	import CentroidWorker._
-	case class WriteReport(specIndex:Int, mzs:Seq[Double], ints:Seq[Double], peaks:Seq[CentroidPeak])
-}
+object CentroidReport {
 
-class CentroidReportActor(val params:DinosaurParams) extends Actor {
-
-	import CentroidReportActor._
-	import CentroidWorker._
+	import Dinosaur._
 	
-	def receive = {
-		case WriteReport(ind, mzs, ints, peaks) =>
-			val sorted = peaks.sortBy(_.int)
-			
-			val image = new BufferedImage(600, 200, BufferedImage.TYPE_INT_RGB)
-			val g = image.createGraphics
-			
-			val min = peakGraph(sorted.head, mzs, ints)
-			val mid = peakGraph(sorted(sorted.length / 2), mzs, ints)
-			val max = peakGraph(sorted.last, mzs, ints)
-			
-			render(g, min, 0)
-			render(g, mid, 200)
-			render(g, max, 400)
-			
-			g.dispose
-			try { 
-			    ImageIO.write(image, "png", new File("qc/"+ind+".png")) 
-			} catch {
-				case ioe:IOException =>
-			    	ioe.printStackTrace
-			}
+	def apply(
+			specIndex:Int, 
+			mzs:Seq[Double], 
+			ints:Seq[Double], 
+			peaks:Seq[CentroidPeak], 
+			streamer:ReportStreamer
+	) = {
+		val sorted = peaks.sortBy(_.int)
+		val min = peakGraph(sorted.head, mzs, ints)
+		val mid = peakGraph(sorted(sorted.length / 2), mzs, ints)
+		val max = peakGraph(sorted.last, mzs, ints)
+		
+		val w = 600
+		val h = 200
+		
+		DinoReport.makeReport(
+				streamer,
+				"centroid_"+specIndex+".png",
+				w, h,
+				g => {
+					render(g, min, 0)
+					render(g, mid, 200)
+					render(g, max, 400)
+				})
 	}
 	
 	

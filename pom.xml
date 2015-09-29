@@ -2,14 +2,11 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>se.lth.immun</groupId>
   <artifactId>Dinosaur</artifactId>
-  <version>0.0.1</version>
+  <version>1.1.0</version>
   <inceptionYear>2015</inceptionYear>
   <properties>
     <scala.version>2.10.0</scala.version>
-    <short.name>dinosaur</short.name>
     <mainClass>se.lth.immun.Dinosaur</mainClass>
-    <script.file>target/${short.name}</script.file>
-    <selfContained.jar>${basedir}/target/${build.finalName}-jar-with-dependencies.jar</selfContained.jar>
   </properties>
   
   <dependencies>
@@ -34,7 +31,7 @@
   	<dependency>
   		<groupId>se.lth.immun</groupId>
   		<artifactId>MzML</artifactId>
-  		<version>1.2.3</version>
+  		<version>1.2.4</version>
   	</dependency>
   	<dependency>
   		<groupId>se.lth.immun</groupId>
@@ -49,7 +46,7 @@
   	<dependency>
   		<groupId>se.lth.immun</groupId>
   		<artifactId>Proteins</artifactId>
-  		<version>1.1.2</version>
+  		<version>1.1.4</version>
   	</dependency>
   	<dependency>
   		<groupId>se.lth.immun</groupId>
@@ -64,12 +61,22 @@
     <dependency>
     	<groupId>se.jt</groupId>
     	<artifactId>CLIApp</artifactId>
-    	<version>1.0.0</version>
+    	<version>1.1.0</version>
     </dependency>
     <dependency>
     	<groupId>se.lth.immun</groupId>
     	<artifactId>Graphs</artifactId>
     	<version>1.0.0</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.commons</groupId>
+    	<artifactId>commons-math3</artifactId>
+    	<version>3.2</version>
+    </dependency>
+    <dependency>
+    	<groupId>se.lth.immun</groupId>
+    	<artifactId>MsFeatureIO</artifactId>
+    	<version>0.1.0</version>
     </dependency>
   </dependencies>
   
@@ -138,6 +145,8 @@
       <plugin>
 	    <artifactId>maven-assembly-plugin</artifactId>
 	    <configuration>
+              <finalName>${artifactId}-${version}.free</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
 	      <descriptorRefs>
 	        <descriptorRef>jar-with-dependencies</descriptorRef>
 	      </descriptorRefs>
@@ -188,30 +197,6 @@
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
-            </goals>
-          </execution>
-	    </executions>
-	  </plugin>
-      
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.6</version>
-        <executions>
-          <execution>
-            <id>install shortcut script</id>
-            <phase>install</phase>
-            <configuration>
-              <target>
-              	<echo message="creating shortcut script '${script.file}'"/>
-				<echo file="${script.file}">#!/bin/bash 
-java -jar ${selfContained.jar} "$@"
-				</echo>
-				<chmod file="${script.file}" perm="755"/>
-				<echo message="changed '${script.file}' permissions to 755"/>
-              </target>
-            </configuration>
-            <goals>
-              <goal>run</goal>
             </goals>
           </execution>
         </executions>
