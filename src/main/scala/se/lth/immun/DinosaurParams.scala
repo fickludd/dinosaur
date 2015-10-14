@@ -12,7 +12,7 @@ class DinosaurParams(val name:String, val version:String) extends Params {
 	
 	// USER EXPOSED PARAMS
 	val verbose 		= false 	## "increase details in output"
-	val concurrency 	= 1 		## "the number of assays to analyze in parallel"
+	val concurrency 	= 2 		## "the number of assays to analyze in parallel"
 	val profiling 		= false 	## "set to enable CPU profiling"
 	val force			= false		## "ignore missing mzML params"
 	
