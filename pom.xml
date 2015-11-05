@@ -48,11 +48,6 @@
   		<artifactId>Proteins</artifactId>
   		<version>1.1.4</version>
   	</dependency>
-  	<dependency>
-  		<groupId>se.lth.immun</groupId>
-  		<artifactId>UniMod</artifactId>
-  		<version>1.0.0</version>
-  	</dependency>
     <dependency>
     	<groupId>com.typesafe.akka</groupId>
     	<artifactId>akka-actor_2.10</artifactId>
