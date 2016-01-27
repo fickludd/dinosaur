@@ -19,7 +19,6 @@ import scala.collection.mutable.Queue
 import java.util.concurrent.TimeUnit
 
 case class ImTheCustomer()
-case class Ms1Count(n:Int)
 case class DinosaurResult(
 		patterns:Seq[IsotopePattern], 
 		targetMatches:Seq[TargetMatcher.Match], 
@@ -73,7 +72,7 @@ class FeatureFinder(
 		
 		// READ SPECTRA, CENTROID THEM AND BUILD HILLS
 		reader.read(f, (a:AnyRef) => actorInbox.send(hillBuilderActor, a))
-		actorInbox.send(hillBuilderActor, Ms1Count(reader.ms1Index))
+		//actorInbox.send(hillBuilderActor, Ms1Count(reader.ms1Index))
 		val completedHills = awaitHillBuilding 
 		
 		params.mzMLParseTime = timer.click

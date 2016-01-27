@@ -68,6 +68,8 @@ class MzMLReader(params:DinosaurParams, streamer:ReportStreamer) {
 		
 		if (!params.verbose) 
 			print(readBar.update(nSpec, nSpec))
+			
+		send(Ms1Count(ms1Index))
 	}
 	
 	

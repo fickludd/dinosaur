@@ -13,6 +13,7 @@ import se.lth.immun.mzml.ghost.GhostSpectrum
 import akka.actor._
 
 case class BuildFromSpectra(n:Int)
+case class Ms1Count(n:Int)
 case class BuiltHills(hills:Seq[Hill])
 case class AddSpectrum(scanIndex:Int, ms1Index:Int, cs:CentSpectrum)
 
@@ -118,8 +119,10 @@ class HillBuilderActorParallel(val params:DinosaurParams) extends Actor {
 		case BuiltRange(range, rawHills) =>
 			done(range) = rawHills
 			beingProcessed -= range.start
+			processIfFree
 			
 			print(readProfiler.onRange(specIndexes(range.start), range, rawHills))
+			
 			
 			if (rawHillsDone) {
 				if (params.verbose)
@@ -136,7 +139,7 @@ class HillBuilderActorParallel(val params:DinosaurParams) extends Actor {
 			
 		case Ms1Count(n) =>
 			ms1Count = n
-			
+			/*
 			val start = ((ms1Count-1) / params.adv.hillBatchSize) * params.adv.hillBatchSize
 			if (specMap.nonEmpty) {
 				if (specMap.keys.toSeq.contains(start)) {
@@ -144,6 +147,17 @@ class HillBuilderActorParallel(val params:DinosaurParams) extends Actor {
 					checkAndQueue(start)
 					processIfFree
 				}
+			}*/
+			
+			specMap.size match {
+				case 0 => {} // we're good to go, just wait for final processing
+				case 1 => 
+					val finalBatch = specMap.keys.head
+					specMap(finalBatch) = specMap(finalBatch).filter(_ != null) 
+					queueForProcess(finalBatch)
+					processIfFree
+				case n =>
+					throw new Exception("Too many hill-batches left after mzML reading complete. Expected 0 or 1, got"+n)
 			}
 	}
 	
