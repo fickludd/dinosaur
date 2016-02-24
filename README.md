@@ -26,15 +26,13 @@ To run Dinosaur `Java 1.6` or greater is needed. The only required input data is
 
 Download the Dinosaur source and binary either using the program `git`, or by direct download of a zip.
 
-using Git
----------
+### using Git
 
 install git and run the following on the commandline
 
 > git clone https://github.com/fickludd/dinosaur
 
-direct download
----------------
+### direct download
 
 navigate to https://github.com/fickludd/dinosaur and click 'Download ZIP'.
 
@@ -70,8 +68,11 @@ Compilation
 Dinosaur requires several dependencies, as specified in the `pom.xml` file. In short, these can be found and compiled in the following repositories when not present in maven central
 
 > MsNumpress -> github.com/msnumpress/msnumpress
+
 > Params, CLIApp -> github.com/fickludd/treacle
+
 > Collections, Graphs, MsFeatureIO, MSFeatureProtocol, MzML, Proteins -> github.com/fickludd/proteomicore
+
 
 All these dependencies as well as Dinosaur are compiled using `Maven 3.0.3` (https://maven.apache.org). Install dependencies by running `mvn install` in the respective dependency source folder. Finally running mvn install in the Dinosaur will compile a selfcontained executable and store in the the target folder.
 
