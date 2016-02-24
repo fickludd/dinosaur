@@ -3,7 +3,9 @@
 This repository contains the APACHE 2 licensed source code for the mass spectrometry MS1 feature detection tool Dinosaur. Dinosaur is an improved reimplementation of the feature finding algorithm of MaxQuant. For a description of the algorithm and how it was evaluated, we refer to the write paper
 
 Dinosaur: a refined open source peptide MS feature detector
+
 Johan Teleman1,2, Aakash Chawade1, Marianne Sandin1, Fredrik Levander1,3, Johan Malmström2
+
 1) Dept. of Immunotechnology, Lund University, Sweden
 2) Dept. of Clinical Sciences Lund, Lund University, Sweden
 3) Bioinformatics Infrastructure for Life Sciences (BILS), Lund University, Sweden
@@ -67,9 +69,9 @@ Compilation
 
 Dinosaur requires several dependencies, as specified in the pom.xml file. In short, these can be found and compiled in the following repositories when not present in maven central
 
-MsNumpress - github.com/msnumpress/msnumpress
-Params, CLIApp - github.com/fickludd/treacle
-Collections, Graphs, MsFeatureIO, MSFeatureProtocol, MzML, Proteins - github.com/fickludd/proteomicore
+> MsNumpress -> github.com/msnumpress/msnumpress
+> Params, CLIApp -> github.com/fickludd/treacle
+> Collections, Graphs, MsFeatureIO, MSFeatureProtocol, MzML, Proteins -> github.com/fickludd/proteomicore
 
 All these dependencies as well as Dinosaur are compiled using Maven 3.0.3 (https://maven.apache.org). Install dependencies by running mvn install in the respective dependency source folder. Finally running mvn install in the Dinosaur will compile a selfcontained executable and store in the the target folder.
 
