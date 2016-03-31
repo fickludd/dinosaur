@@ -90,6 +90,12 @@ object Dinosaur extends CLIApp {
 			writeTime += OutWriter.writeBinary(binaryFile, dinoResult.patterns, ff.reader.specTime, params)
 		}
 		
+		if (params.writeQuantML) {
+			val mzqFile = outQuantMLFile(params.outBase)
+			println("  writing %s file %s".format("mzQuantML", mzqFile.toString))
+			writeTime += MzQuantML.write(mzqFile, dinoResult.patterns, ff.reader.specTime, params)
+		}
+		
 		
 		
 		if (params.profiling) {
@@ -119,10 +125,11 @@ object Dinosaur extends CLIApp {
 	def toOutFile(ext:String)(base:(String, String)):File = 
 		new File(base._1, base._2+"."+ext)
 	
-	def outFeatureFile = toOutFile("features.csv") _
+	def outFeatureFile = toOutFile("features.tsv") _
 	def outTargetFile = toOutFile("targets.csv") _
 	def outHillFile = toOutFile("hills.csv") _
 	def outBinaryFile = toOutFile("features.bin") _
+	def outQuantMLFile = toOutFile("mzq") _
 	def outMsInspectFile = toOutFile("msInspect.tsv") _
 	def outQcZipFile = toOutFile("qc.zip") _
 	

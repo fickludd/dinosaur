@@ -18,7 +18,8 @@ class DinosaurParams(val name:String, val version:String) extends Params {
 	
 	val writeHills		= false		## "set to output csv file with all hills assigned to isotope patterns"
 	val writeMsInspect	= false		## "set to output MsInspect feature csv file"
-	val writeBinary		= false		## "set to binary MSFeatureProtocol file"
+	val writeBinary		= false		## "set to output binary MSFeatureProtocol file"
+	val writeQuantML	= false		## "set to output mzQuantML file" 
 	val outDir			= ""		## "output directory (by default same as input mzML)"
 	val outName			= ""		## "basename for output files (by default same as input mzML)"
 	
