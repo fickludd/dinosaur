@@ -26,17 +26,18 @@ class DinosaurParams(val name:String, val version:String) extends Params {
 	val nReport			= 10		## "number of random assay to export control figure for"
 	val reportSeed		= -1L		## "seed to use for report assay selection (<0 means random)"
 	val reportDeisoMzHeight	= 15.0	## "mz range in deisotoper reports"
+	val reportHighRes	= false		## "generate high-resolution plot trail when supported (for print)"
 	val reportTargets	= false		## "set to create a special report figure for each target"
 	val targets = ""				## "path to isotope patterns target file (not used by default)"
 	val targetPreference = "rt"		## "if multiple isotope patterns fit target, take the closest rt apex (rt) or the most intense (intensity)"
 	val mode = "global"				## "analysis mode: global or target. Global mode reports all isotope patterns, targeted only those matching targets."
-	val zipQcFolder = false		## "set to zip the entire qc folder on algorithm completion"
+	val zipQcFolder = false			## "set to zip the entire qc folder on algorithm completion"
 	
 	val minCharge = 1				## "min searched ion charge"
 	val maxCharge = 6				## "max searched ion charge"
 	
 	val advParams = ""				## "path to adv param file"
-	val advHelp = false			## "set to output adv param file help and quit"
+	val advHelp = false				## "set to output adv param file help and quit"
 	val adv = new DinosaurAdvParams
 	
 	val mzML = ReqString("The shotgun MzML file to analyze")

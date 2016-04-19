@@ -3,6 +3,8 @@ package se.lth.immun
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
+import java.awt.BasicStroke
+import java.awt.Font
 import javax.imageio.ImageIO
 import java.io.IOException
 
@@ -31,6 +33,9 @@ object DinoReport {
 	val INT_GRADIENT = new ColorGradient(Array(0.0, 0.35, 0.6, 0.75, 0.9, 1.0), Array(Color.BLACK, new Color(85, 0, 255), new Color(0, 85, 255), Color.YELLOW, new Color(0, 255, 230), Color.WHITE))
 	val INT_GRADIENT2 = new ColorGradient(Array(0.0, 0.2, 0.6, 1.0), Array(Color.BLACK, Color.BLACK, Color.BLUE, Color.CYAN))
 	val MONOCHROME_GRADIENT = new ColorGradient(Array(0.0, 1.0), Array(Color.WHITE, Color.BLACK))
+	val HIGHRES_LINEWIDTH = 4.0
+	val HIGHRES_STROKE = new BasicStroke((HIGHRES_LINEWIDTH-1).toFloat)
+	val HIGHRES_FONT = new Font("TimesRoman", Font.PLAIN, 28)
 	
 	
 	
@@ -63,7 +68,7 @@ object DinoReport {
 			new Color(0xbcbd22), new Color(0xdbdb8d), 
 			new Color(0x17becf), new Color(0x9edae5)))
 	
-	val RED4 = new DistinctColors(Array(Color.WHITE, Color.RED, Color.MAGENTA, new Color(1.0f, 0.8f, 0.2f)))
+	val RED4 = new DistinctColors(Array(Color.WHITE.darker, Color.RED, Color.MAGENTA, new Color(1.0f, 0.8f, 0.2f)))
 	
 	
 	class DistinctColors(val curveColors:Seq[Color]) {
@@ -77,19 +82,25 @@ object DinoReport {
 			streamer:ReportStreamer, 
 			relPath:String, 
 			w:Int, h:Int, 
-			f:Graphics2D => Unit
+			f:Graphics2D => Unit,
+			pdf:Boolean = false
 	) = {
-		val image = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
-		val g = image.createGraphics
 		
-		f(g)
-		
-		g.dispose
-		try { 
-		    ImageIO.write(image, "png", streamer.streamByPath(relPath)) 
-		} catch {
-			case ioe:IOException =>
-		    	ioe.printStackTrace
+		if (pdf) {
+			
+		} else {
+			val image = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
+			val g = image.createGraphics
+			
+			f(g)
+			
+			g.dispose
+			try { 
+			    ImageIO.write(image, "png", streamer.streamByPath(relPath)) 
+			} catch {
+				case ioe:IOException =>
+			    	ioe.printStackTrace
+			}
 		}
 		streamer.closeLast
 	}

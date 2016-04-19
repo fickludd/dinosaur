@@ -52,8 +52,8 @@ object HillReport {
 		if (hills.isEmpty)
 			throw new Exception("No hill for hill report!")
 		
-		val w = 400
-		val h = 600
+		val w = if (params.reportHighRes) 3000 else 400
+		val h = if (params.reportHighRes) 4000 else 600
 		val sorted = hills.sortBy(_.length).filter(_.length > 2)
 				
 		DinoReport.makeReport(
@@ -61,11 +61,17 @@ object HillReport {
 				"hills_%d_%.3f.png".format(ms1start, sorted.last.total.centerMz),
 				w, h,
 				g => {
-					drawHill(sorted.last, ms1start, spectra, g, params)
-					g.translate(0, 200)
-					drawHill(sorted(sorted.length / 2), ms1start, spectra, g, params)
-					g.translate(0, 200)
-					drawHill(sorted.head, ms1start, spectra, g, params)
+					
+					if (params.reportHighRes) {
+						g.setStroke(DinoReport.HIGHRES_STROKE)
+						g.setFont(DinoReport.HIGHRES_FONT)
+					}
+					
+					drawHill(sorted.last, ms1start, spectra, g, w, h/3, params)
+					g.translate(0, h/3)
+					drawHill(sorted(sorted.length / 2), ms1start, spectra, g, w, h/3, params)
+					g.translate(0, h/3)
+					drawHill(sorted.head, ms1start, spectra, g, w, h/3, params)
 				})
 	}
 	
@@ -77,6 +83,8 @@ object HillReport {
 			ms1start:Int,
 			spectra:Seq[GhostSpectrum],
 			g:Graphics2D,
+			w:Int,
+			h:Int,
 			params:DinosaurParams
 	) = {
 		
@@ -90,6 +98,8 @@ object HillReport {
 		val mzw = hill.maxMzWidth 
 		val minMz = math.max(dMinMz, hill.total.minMz - mzw/2)
 		val maxMz = math.min(dMaxMz, hill.total.maxMz + mzw/2) 
+		val heatHeight = h*3/4
+		val barHeight = h - heatHeight
 		
 		val relevantSpectra = spectra.slice(sMinInd-ms1start, sMaxInd-ms1start)
 		val relevantData = relevantSpectra.map(gs => gs.mzs.zip(gs.intensities).filter(t => t._1 >= minMz && t._1 <= maxMz)).zipWithIndex
@@ -99,8 +109,8 @@ object HillReport {
 		val maxCPInt = math.max(hill.smoothIntensity.max, hill.rawIntensity.max)
 		
 		val domain = DataView.domain(minInd, maxInd, minMz, maxMz, maxCPInt, maxLogInt) _
-		val heatMap = domain(400, 150)
-		val barGraph = domain(400, 50)
+		val heatMap = domain(w, heatHeight)
+		val barGraph = domain(w, barHeight)
 		
 		heatMap.drawSpectra(g, relevantData)
 		
@@ -113,10 +123,10 @@ object HillReport {
 		g.drawString("maxInt=%e".format(maxInt), 10, 30)
 		g.drawString(""+hill.scanIndex(hill.length / 2), 300, 15)
 		
-		g.translate(0, 150)
+		g.translate(0, heatHeight)
 		g.setColor(Color.GRAY)
-		g.fillRect(0, 0, 400, 50)
+		g.fillRect(0, 0, w, barHeight)
 		barGraph.drawHillProfile(g, hill, Color.RED, Color.WHITE)
-		g.translate(0, -150)
+		g.translate(0, -heatHeight)
 	}
 }

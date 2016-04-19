@@ -66,33 +66,45 @@ class DeisotopeReport(
 			ip.hills.map(_.total.centerMz).min > minMz && 
 			ip.hills.map(_.total.centerMz).max < maxMz)
 	
-	val pw = 1000
-	val ph = 1000
+	val pw = if (params.reportHighRes) 4000 else 1000
+	val ph = if (params.reportHighRes) 4000 else 1000
 	
 	
 	def report(streamer:ReportStreamer) = {
+		
+		var i = 0
+		def nextColor = {
+			i = (i + 1) % DinoReport.RED4.curveColors.length
+			DinoReport.RED4.color(i)
+		}
 		
 		DinoReport.makeReport(
 				streamer,
 				"deisotoper-%d.png".format(minInd),
 				pw, ph,
 				g => {
+					
+					if (params.reportHighRes) {
+						g.setStroke(DinoReport.HIGHRES_STROKE)
+						g.setFont(DinoReport.HIGHRES_FONT)
+					}
+					
 					val relevantData = spectra.map(gs => 
 							gs.mzs.zip(gs.intensities)
 								.filter(t => t._1 > minMz && t._1 < maxMz)
 						).zipWithIndex
 					val (dw, dh) = drawSpectra(g, relevantData)
 					
-					val sorted = ipatterns.sortBy(_.apexHill.apex.intensity).reverse
+					val sorted = visible.sortBy(_.apexHill.apex.intensity).reverse
 					for (ip <- sorted.drop(20)) 
-						drawPattern(g, ip, Color.RED.darker, false, true)(params)
+						drawPattern(g, ip, nextColor, pw/1000, false, false)(params)
 						
 					for (ip <- sorted.take(20)) 
-						drawPattern(g, ip, Color.RED, false, true)(params)
+						drawPattern(g, ip, nextColor, pw/1000, false, true)(params)
 					
 					g.setColor(Color.RED)
-					g.drawString("mz=[%.1f-%.1f]".format(minMz, maxMz), 10, 15)
-					g.drawString("scans=[%d-%d]".format(minInd, maxInd), 10, 30)
+					g.drawString("mz=[%.1f-%.1f]".format(minMz, maxMz), pw/100, ph*15/1000)
+					g.drawString("scans=[%d-%d]".format(minInd, maxInd), pw/100, ph*30/1000)
 				})
 		
 	}

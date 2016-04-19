@@ -292,7 +292,7 @@ class TargetFoundReport(
 		//for (h <- relHills)
 		//	drawHill(g, h)
 		
-		drawPattern(g, ip, Color.RED, true, true)(params)
+		drawPattern(g, ip, Color.RED, pw/1000, true, true)(params)
 		
 		g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.5f))
 		g.fillRect(0, 0, pw, 50)
@@ -352,13 +352,13 @@ class TargetMissingReport(
 		
 		g.setColor(Color.RED)
 		for (h <- hills)
-			drawHill(g, h, true)
+			drawHill(g, h, true, pw/1000)
 		
 		val sortedIsotopes = isotopes.sortBy(_.apexHill.apex.intensity).reverse
 		for (iso <- sortedIsotopes.drop(10))
-			drawPattern(g, iso, Color.DARK_GRAY, false, true)(params)
+			drawPattern(g, iso, Color.DARK_GRAY, pw/1000, false, true)(params)
 		for (iso <- sortedIsotopes.take(10))
-			drawPattern(g, iso, Color.RED, true, true)(params)
+			drawPattern(g, iso, Color.RED, pw/1000, true, true)(params)
 		
 			
 		g.setColor(Color.WHITE)

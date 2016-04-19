@@ -124,6 +124,7 @@ trait DataViewable {
 			g:Graphics2D, 
 			ip:IsotopePattern, 
 			col:Color, 
+			lineWidth:Int,
 			edgeText:Boolean,
 			hillText:Boolean
 	)(
@@ -131,22 +132,22 @@ trait DataViewable {
 	) = {
 		g.setColor(col)
 		for (hill <- ip.hills)
-			drawHill(g, hill, hillText)
+			drawHill(g, hill, hillText, lineWidth)
 		for ((h1, h2) <- ip.hills.zip(ip.hills.tail)) {
 			g.setColor(col.darker())
 			val x1 = tox(h1.scanIndex(h1.scanIndex.length / 2))
-			val y1 = toy(h1.total.centerMz+h1.maxMzWidth/2)-1
+			val y1 = toy(h1.total.centerMz+h1.maxMzWidth/2)-lineWidth
 			val x2 = tox(h2.scanIndex(h2.scanIndex.length / 2))
 			val y2 = toy(h2.total.centerMz-h2.maxMzWidth/2)
 			g.drawLine(x1, y1, x2, y2)
 			
 			if (edgeText) {
-				val x = (x1+x2) / 2 + 5
-				val y = (y1+y2) / 2 - 10
+				val x = (x1+x2) / 2 + 5*lineWidth
+				val y = (y1+y2) / 2 - 10*lineWidth
 				val stats = new HillHillStats(h1, h2, ip.z, params)
 				
 				g.drawString("%.5f".format(stats.resMDiff), x, y)
-				g.drawString("x:%.3f".format(stats.corr), x, y + 15)
+				g.drawString("x:%.3f".format(stats.corr), x, y + 15*lineWidth)
 			}
 			
 			g.setColor(Color.WHITE)
@@ -156,13 +157,13 @@ trait DataViewable {
 	}
 	
 	
-	def drawHill(g:Graphics2D, hill:Hill, annot:Boolean) = {
+	def drawHill(g:Graphics2D, hill:Hill, annot:Boolean, lineWidth:Int) = {
 		val y1 = toy(hill.total.centerMz+hill.maxMzWidth/2)
 		val y2 = toy(hill.total.centerMz-hill.maxMzWidth/2)
-		g.drawRect(tox(hill.scanIndex.head), y1-1, 
-				tox(hill.scanIndex.last+1)-tox(hill.scanIndex.head), (y2-y1)+1)
+		g.drawRect(tox(hill.scanIndex.head), y1-lineWidth, 
+				tox(hill.scanIndex.last+lineWidth)-tox(hill.scanIndex.head), (y2-y1)+lineWidth)
 		if (annot && hill.scanIndex.length > 3)
-			g.drawString("%.2f".format(hill.total.centerMz), tox(hill.scanIndex.head), y1-5)
+			g.drawString("%.2f".format(hill.total.centerMz), tox(hill.scanIndex.head), y1-5*lineWidth)
 	}
 	
 	
