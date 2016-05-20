@@ -46,15 +46,15 @@ or navigate to https://github.com/fickludd/dinosaur and click 'Download ZIP' to 
 To execute Dinosaur
 -------------------
 
-navigate to the unzipped Dinosaur folder or , and run on the commandline
+Navigate to the Dinosaur jar, and run on the commandline
 
-> java -jar bin/Dinosaur-1.1.0.free.jar
+> java -jar Dinosaur-1.1.0.free.jar
 
 where 1.1.0 should be replaced with the actual version you downloaded.
 
 Running like this, without any parameters, will just output help for the available commands and how to run Dinosaur. To actually detect features on a mzML file, the following command would be suitable
 
-> java -jar bin/Dinosaur-1.1.0.free.jar --verbose --profiling --concurrency=4 myData.mzML
+> java -jar Dinosaur-1.1.0.free.jar --verbose --profiling --concurrency=4 myData.mzML
 
 where myData.mzML should be replaced with your relevant file.
 
