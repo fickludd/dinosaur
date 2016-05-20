@@ -1,6 +1,6 @@
 # Dinosaur
 
-This repository contains the APACHE 2 licensed source code for the mass spectrometry MS1 feature detection tool Dinosaur. Dinosaur is an improved reimplementation of the feature finding algorithm of MaxQuant. For a description of the algorithm and how it was evaluated, we refer to the write paper
+This repository contains the APACHE 2 licensed source code for the mass spectrometry MS1 feature detection tool Dinosaur. Dinosaur is an improved reimplementation of the feature finding algorithm of MaxQuant. For a description of the algorithm and how it was evaluated, we refer to the white paper
 
 ### Dinosaur: a refined open source peptide MS feature detector
 
@@ -24,22 +24,29 @@ Getting started with Dinosaur
 
 To run Dinosaur `Java 1.6` or greater is needed. The only required input data is the MS data in the mzML-format. We recommend using ProteoWizard to produce the mzML. 
 
-Download the Dinosaur source and binary either using the program `git`, or by direct download of a zip.
+Dinosaur can be acquired either by downloading a pre-compiled release (click the Release tag), or by downloadning the source and compiling.
 
-### using Git
+### Direct download of binary
 
-install git and run the following on the commandline
+Click the releases button and select the version you want (Click the .jar file).
+
+
+### Get Dinosaur from source
+
+Download the Dinosaur source using either the program `git`, or by direct download of a zip.
+
+For git, install git and run the following on the commandline
 
 > git clone https://github.com/fickludd/dinosaur
 
-### direct download
+or navigate to https://github.com/fickludd/dinosaur and click 'Download ZIP' to download the source directly.
 
-navigate to https://github.com/fickludd/dinosaur and click 'Download ZIP'.
+
 
 To execute Dinosaur
 -------------------
 
-navigate to the unzipped Dinosaur folder, and run on the commandline
+navigate to the unzipped Dinosaur folder or , and run on the commandline
 
 > java -jar bin/Dinosaur-1.1.0.free.jar
 
@@ -56,7 +63,7 @@ where myData.mzML should be replaced with your relevant file.
 The Dinosaur source code
 ========================
 
-Dinosaur is written in Scala 2.10.0 (http://scala-lang.org). This is a high level language that in compiled to produce programs for the java virtual machine (JVM). Compilation of Dinosaur and management of dependencies is achieved via maven.
+Dinosaur is written in Scala 2.10.3 (http://scala-lang.org). This is a high level language that in compiled to produce programs for the java virtual machine (JVM). Compilation of Dinosaur and management of dependencies is achieved via maven. 
 
 Program execution begins in the `Dinosaur` class, which handles the outermost program logic. Actual algorithm execution is thought performed in `FeatureFinder.analyzeMzML()`. Dinosaur main parameters are defined in `DinosaurParams`, and advanced algorithm parameters in `DinosaurAdvParams`. A DinosaurParams object is instantiated at the start of execution in the Dinosaur class, and passed around where ever parameters are needed.
 
@@ -65,7 +72,7 @@ Classes named SomethingReport hold logic related to plots in the plot trail.
 Compilation
 -----------
 
-Dinosaur requires several dependencies, as specified in the `pom.xml` file. In short, these can be found and compiled in the following repositories when not present in maven central
+Dinosaur requires several dependencies, as specified in the `pom.xml` file. These dependencies are archived in Maven central, and should be automagically downloaded by Maven.
 
 | Dependency                                                          | Repository                       |
 | ------------------------------------------------------------------- | -------------------------------- |
@@ -74,7 +81,7 @@ Dinosaur requires several dependencies, as specified in the `pom.xml` file. In s
 | Collections, Graphs, MsFeatureIO, MSFeatureProtocol, MzML, Proteins | github.com/fickludd/proteomicore | 
 
 
-All these dependencies as well as Dinosaur are compiled using `Maven 3.0.3` (https://maven.apache.org). Install dependencies by running `mvn install` in the respective dependency source folder. Finally running mvn install in the Dinosaur will compile a selfcontained executable and store in the the target folder.
+Dinosaur is compiled using `Maven 3.0.3` (https://maven.apache.org). Compile Dinosaur by running `mvn install` in the Dinosaur source code directory, which will generate a selfcontained executable and store it in the target folder, `target/Dinosaur-VERSION.free.jar`.
 
 
 Dinosaur configuration and parameters
