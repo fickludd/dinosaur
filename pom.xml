@@ -7,6 +7,7 @@
   <properties>
     <scala.version>2.10.0</scala.version>
     <mainClass>se.lth.immun.Dinosaur</mainClass>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   
   <dependencies>
@@ -97,6 +98,7 @@
       <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>
+        <version>2.15.2</version>
         <executions>
           <execution>
             <goals>
@@ -111,26 +113,9 @@
       </plugin>
       
       <plugin>
-        <artifactId>maven-eclipse-plugin</artifactId>
-        <configuration>
-          <downloadSources>true</downloadSources>
-          <buildcommands>
-            <buildcommand>ch.epfl.lamp.sdt.core.scalabuilder</buildcommand>
-          </buildcommands>
-          <additionalProjectnatures>
-            <projectnature>ch.epfl.lamp.sdt.core.scalanature</projectnature>
-          </additionalProjectnatures>
-          <classpathContainers>
-            <classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
-            <classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER</classpathContainer>
-          </classpathContainers>
-        </configuration>
-      </plugin>
-      
-      <plugin>
 	    <artifactId>maven-assembly-plugin</artifactId>
 	    <configuration>
-              <finalName>${artifactId}-${version}.free</finalName>
+              <finalName>${project.artifactId}-${project.version}.free</finalName>
               <appendAssemblyId>false</appendAssemblyId>
 	      <descriptorRefs>
 	        <descriptorRef>jar-with-dependencies</descriptorRef>
