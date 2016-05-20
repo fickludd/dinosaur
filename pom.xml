@@ -42,7 +42,7 @@
     <dependency>
     	<groupId>se.johanteleman</groupId>
     	<artifactId>CLIApp</artifactId>
-    	<version>1.1.0</version>
+    	<version>1.2.0</version>
     </dependency>
     <dependency>
     	<groupId>org.apache.commons</groupId>
