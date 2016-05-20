@@ -23,8 +23,10 @@ object OutWriter {
 			f, 
 			MsFeatures(
 				rtMap, 
-				features.map(p => 
+				features.zipWithIndex.map(t => {
+					val (p, i) = t
 					MsFeature(
+							i,
 							p.hills.head.total.centerMz,
 							p.z,
 							p.mass,
@@ -45,8 +47,8 @@ object OutWriter {
 									h.apex.intensity,
 									h.smoothFullProfile
 							))
-							
-				))),
+					)}
+				)),
 			RtUnit.MINUTE,
 			false) // params.verbose) <- WAY TOO MUCH OUTPUT
 		System.currentTimeMillis() - t0
