@@ -105,7 +105,7 @@ class MzMLReader(params:DinosaurParams, streamer:ReportStreamer) {
 		if (!params.inDebugTimeWindow(gs.scanStartTime))
 			return
 			
-		if (gs.msLevel == 1) {
+		if (gs.msLevel == GhostSpectrum.MS1) {
 			specTime += gs.scanStartTime
 		
 			specBackLog = gs :: specBackLog.take(params.spectrumBacklogSize - 1)

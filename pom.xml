@@ -2,10 +2,10 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>se.lth.immun</groupId>
   <artifactId>Dinosaur</artifactId>
-  <version>1.1.3</version>
+  <version>1.1.4</version>
   <inceptionYear>2015</inceptionYear>
   <properties>
-    <scala.version>2.10.3</scala.version>
+    <scala.version>2.10.6</scala.version>
     <mainClass>se.lth.immun.Dinosaur</mainClass>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -24,8 +24,8 @@
     </dependency>
     <dependency>
     	<groupId>org.scalatest</groupId>
-    	<artifactId>scalatest_2.10.0</artifactId>
-    	<version>2.0.M5</version>
+    	<artifactId>scalatest_2.10</artifactId>
+    	<version>2.0</version>
     	<scope>test</scope>
     </dependency>
     <dependency>
@@ -56,7 +56,7 @@
     <dependency>
     	<groupId>se.lth.immun</groupId>
     	<artifactId>MzML</artifactId>
-    	<version>1.3.1</version>
+    	<version>1.3.4</version>
     </dependency>
     <dependency>
     	<groupId>se.lth.immun</groupId>
