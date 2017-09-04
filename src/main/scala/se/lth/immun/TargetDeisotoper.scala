@@ -20,6 +20,7 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 		
 		println("=== IN TARGETED MODE - BEWARE!!! ===")
 		val hillsByMz = hills.sortBy(_.total.centerMz)
+		val hillsMzs = hillsByMz.map(h => h.total.centerMz)
 		
 		if (params.verbose)
 			println("deisotoping based on targets...")
@@ -29,7 +30,7 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 				if (params.verbose)
 					println(t.id)
 				
-				val monoisoHills = closeHills(hillsByMz, t, specTime)
+				val monoisoHills = closeHills(hillsByMz, t, hillsMzs, specTime)
 				if (monoisoHills.nonEmpty) {
 					val patterns = getPatterns(monoisoHills, hillsByMz, t).map(ip =>
 						IsotopePattern(ip.inds.map(hillsByMz), ip.offset, ip.mostAbundNbr - ip.offset, ip.z, ip.averagineCorr))
@@ -45,13 +46,14 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 	}
 	
 	
-	def closeHills(hills:Array[Hill], t:Target, specTime:Seq[Double]):Seq[Int] = {
+	def closeHills(hills:Array[Hill], t:Target, hillsMzs:Array[Double], specTime:Seq[Double]):Seq[Int] = {
+	  val hillsStartIndx = math.abs(java.util.Arrays.binarySearch(hillsMzs, t.mz - t.mzDiff)+1)
+	  val hillsEndIndx = math.min(hills.length, math.abs(java.util.Arrays.binarySearch(hillsMzs, t.mz + t.mzDiff)+1))
 		val inds = new ArrayBuffer[Int]
-		for (i <- 0 until hills.length) {
+		for (i <- hillsStartIndx until hillsEndIndx) {
 			val h = hills(i)
-			val hmz = h.total.centerMz
 			val hApexRt = h.accurateApexRt(specTime)
-			if (hmz > t.mz - t.mzDiff && hmz < t.mz + t.mzDiff && hApexRt > t.rtStart && hApexRt < t.rtEnd)
+			if (hApexRt > t.rtStart && hApexRt < t.rtEnd)
 				inds += i
 		}
 		inds
@@ -68,7 +70,7 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 		val patterns = 
 			for {
 				seed <- seeds
-				isopatInds <- extendSeed(seed, overlapping(seed, hills), hills, t.z)
+				isopatInds <- extendSeed(seed, Nil, hills, t.z)
 			} yield (isopatInds)
 		if (patterns.isEmpty) Nil
 		else 
@@ -81,7 +83,7 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 		val seedTot = hills(seed).total
 			
 		def extend2(dir:Int):Seq[Int] = {
-			var ii = inds.indexOf(seed)+dir
+			var ii = seed+dir
 			var nIso = 1
 			val sHill = hills(seed)
 			val sTot = sHill.total
@@ -107,29 +109,32 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 					isoMissing = true
 			}
 			
-			while (!isoMissing && ii < inds.length && ii >= 0) {
-				val iHill = hills(inds(ii))
-				val iTot = iHill.total
-				val mDiff = iTot.centerMz - m
-				val massErrorSq = params.adv.deisoSigmas * params.adv.deisoSigmas * (
-						seedErr2 + iTot.centerMzError * iTot.centerMzError)
-				val err2 = DinoUtil.SULPHUR_SHIFT * DinoUtil.SULPHUR_SHIFT / (z*z) + massErrorSq
-				if (mDiff * mDiff <= err2) {
-					alts += inds(ii)
-					ii += dir
-				} else if (dir*mDiff > 0) {
-					evalAlts
-				} else {
-					ii += dir
-				}
-				
+			while (!isoMissing && ii < hills.length && ii >= 0) {
+				val iHill = hills(ii)
+			  val iTot = iHill.total
+			  val mDiff = iTot.centerMz - m
+			  val massErrorSq = params.adv.deisoSigmas * params.adv.deisoSigmas * (
+					  seedErr2 + iTot.centerMzError * iTot.centerMzError)
+			  val err2 = DinoUtil.SULPHUR_SHIFT * DinoUtil.SULPHUR_SHIFT / (z*z) + massErrorSq
+			  if (mDiff * mDiff <= err2) {
+			    if (overlap(sHill, iHill) > 0) {
+  				  alts += ii
+  				}
+				  ii += dir
+			  } else if (dir*mDiff > 0) {
+				  evalAlts
+			  } else {
+				  ii += dir
+			  }
 			}
 			evalAlts
 			isos
 		}
 					
 		val upMatches = extend2(1)
-		val downMatches = extend2(-1)
+		//val downMatches = extend2(-1)
+		val downMatches = Nil
+		
 		val result = downMatches.reverse ++ (seed +: upMatches)
 		val resSeedInd = downMatches.length
 		val resultProfile = result.map(hills(_).apex.intensity)
@@ -154,8 +159,8 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 		val alignment = params.adv.deisoAveragineStrategy(cleanProfile, avgIsotopeDistr, params)
 		
 		alignment.map(a => IsotopePatternInds(
-				cleanResult.drop(math.max(0, -a.offset)), 
-				math.max(0, a.offset), 
+				cleanResult,//.drop(math.max(0, -a.offset)), 
+				0, //math.max(0, a.offset), 
 				avgIsotopeDistr.intensities.indexOf(avgIsotopeDistr.intensities.max), 
 				z, 
 				a.corr,

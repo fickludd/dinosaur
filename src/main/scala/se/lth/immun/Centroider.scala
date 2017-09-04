@@ -33,7 +33,7 @@ class Centroider(val params:DinosaurParams, streamer:ReportStreamer) {
 					gs.spectrum.index, 
 					gs.mzs.min, 
 					gs.mzs.max, 
-					gs.mzs.zip(gs.intensities).map(t => 
+					gs.mzs.zip(gs.intensities).filter(t => t._2 > 0.0).map(t => 
 						new CentroidPeak(t._1, t._2, t._1, t._1)
 					)
 				), 
