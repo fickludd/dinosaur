@@ -1,35 +1,110 @@
 package se.lth.immun
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Queue
+import scala.collection.mutable.HashSet
+
+import akka.actor._
 
 import se.lth.immun.chem.Peptide
 import se.lth.immun.chem.Constants
 import se.lth.immun.chem.IsotopeDistribution
 
-class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
+class TargetDeisotoper(val params:DinosaurParams) extends Actor with Timeable {
 
 	import Cluster._
 	
 	implicit val p = params
 	
-	def deisotope(
-			hills:Array[Hill], 
-			targets:Seq[Target], 
-			specTime:Seq[Double]
+	val toProcess 			= new Queue[(Int, Seq[Target])]
+	val beingProcessed 		= new HashSet[Int]
+	val completedPatterns	= new ArrayBuffer[Seq[IsotopePattern]]
+	
+	var hillsByMz:Array[Hill] = _
+	var hillsMzs:Array[Double] = _
+	var specTime:Seq[Double] = _
+	var customer:ActorRef = _
+	
+	val targetBatchSize = 1000
+	
+	def receive = {
+		case TargetDeisotope(hs, targets, st) => 
+			timer.start
+			
+			val hills = hs.toArray
+			specTime = st
+			customer = sender
+			
+			println("=== IN TARGETED MODE - BEWARE!!! ===")
+		  hillsByMz = hills.sortBy(_.total.centerMz)
+		  hillsMzs = hillsByMz.map(h => h.total.centerMz)
+		
+		  if (params.verbose)
+			  println("deisotoping based on targets...")
+			
+			/*
+			 * Using a list for the hills is extremely slow for many hills
+			 * an array is asympotically faster
+			 */
+      val batchTargetList = targets.grouped(targetBatchSize).toList
+      for (i <- 0 until batchTargetList.length)
+			  toProcess += i -> batchTargetList(i)
+			
+			if (params.verbose)
+  			println("created " + batchTargetList.length + " target deisotoping batches")
+			processIfFree
+		
+		case Deisotoped(batchId, isotopes) =>
+		  completedPatterns += isotopes
+		  beingProcessed -= batchId
+		  if (params.verbose)
+  		  println("batch deisotoping finished " + batchId)	
+		  
+		  if (toProcess.isEmpty && beingProcessed.isEmpty) {
+				if (params.verbose)
+				  println("deisotoping finished")
+				
+				customer ! TargetDeisotopingComplete(Nil, completedPatterns.flatten)
+				context.stop(self)
+			} else
+			  processIfFree
+						
+	}
+	
+	
+	def processIfFree = {
+		while (toProcess.nonEmpty && beingProcessed.size < params.concurrency) {
+			val (batchId, batchTargets) = toProcess.dequeue
+			beingProcessed += batchId
+			val a = context.actorOf(Props(new TargetBatchDeisotoper(params)))
+  		a ! BatchDeisotope(batchId, hillsByMz, batchTargets, hillsMzs, specTime)
+		}
+	}
+}
+
+class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
+  
+  import Cluster._
+  
+  implicit val p = params
+  
+  def receive = {
+		
+		case BatchDeisotope(batchId, hillsByMz, batchTargets, hillsMzs, specTime) =>
+		  val (_, isotopes) = deisotope(hillsByMz, batchTargets, hillsMzs, specTime)
+		  
+		  sender ! Deisotoped(batchId, isotopes)
+		  context.stop(self)
+  }
+  
+	def deisotope(hillsByMz:Array[Hill],
+			targets:Seq[Target],
+			hillsMzs:Array[Double],
+			specTime:Seq[Double]			
 	):(Seq[Seq[Cluster.Edge]], Seq[IsotopePattern]) = {
-		
-		println("=== IN TARGETED MODE - BEWARE!!! ===")
-		val hillsByMz = hills.sortBy(_.total.centerMz)
-		val hillsMzs = hillsByMz.map(h => h.total.centerMz)
-		
-		if (params.verbose)
-			println("deisotoping based on targets...")
 		
 		val targetPatterns = 
 			for (t <- targets) yield {
-				if (params.verbose)
-					println(t.id)
-				
 				val monoisoHills = closeHills(hillsByMz, t, hillsMzs, specTime)
 				if (monoisoHills.nonEmpty) {
 					val patterns = getPatterns(monoisoHills, hillsByMz, t).map(ip =>
@@ -40,15 +115,12 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 					(t, Nil)
 			}
 		
-		if (params.verbose)
-			println("deisotoping complete")
 		(Nil, targetPatterns.flatMap(_._2))
 	}
 	
 	
 	def closeHills(hills:Array[Hill], t:Target, hillsMzs:Array[Double], specTime:Seq[Double]):Seq[Int] = {
-	  val hillsStartIndx = math.abs(java.util.Arrays.binarySearch(hillsMzs, t.mz - t.mzDiff)+1)
-	  val hillsEndIndx = math.min(hills.length, math.abs(java.util.Arrays.binarySearch(hillsMzs, t.mz + t.mzDiff)+1))
+	  val (hillsStartIndx, hillsEndIndx) = DinoUtil.getMinxMaxIndx(hillsMzs, t.mz, t.mzDiff)
 		val inds = new ArrayBuffer[Int]
 		for (i <- hillsStartIndx until hillsEndIndx) {
 			val h = hills(i)
@@ -182,3 +254,8 @@ class TargetDeisotoper(val params:DinosaurParams) extends Timeable {
 	def overlap(h1:Hill, h2:Hill) =
 		math.min(h1.scanIndex.last, h2.scanIndex.last) - math.max(h1.scanIndex.head, h2.scanIndex.head) 
 }
+
+case class BatchDeisotope(batchId:Int, hillsByMz:Array[Hill], batchTargets:Seq[Target], hillsMzs:Array[Double],specTime:Seq[Double])
+case class Deisotoped(batchId:Int, isotopes:Seq[IsotopePattern])
+case class TargetDeisotope(hills:Seq[Hill], targets:Seq[Target], specTime:Seq[Double])
+case class TargetDeisotopingComplete(clusters:Seq[Seq[Cluster.Edge]], patterns:Seq[IsotopePattern])

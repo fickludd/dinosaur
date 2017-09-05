@@ -7,17 +7,22 @@ object TargetMatcher {
 			targets:Seq[Target], 
 			patterns:Seq[IsotopePattern],
 			specTime:Seq[Double]
-	)(implicit params:DinosaurParams) = 
+	)(implicit params:DinosaurParams) = {
+	  val apatterns = patterns.toArray
+	  val sortedPatterns = apatterns.sortBy(_.hills.head.total.centerMz)
+	  val patternMzs = sortedPatterns.map(_.hills.head.total.centerMz)
 		for (t <- targets) yield {
-			val candidates = 
-				patterns.filter(ip => {
-					val rt = ip.apexHill.accurateApexRt(specTime)
-					val mz = ip.hills.head.total.centerMz
-					rt >= t.rtStart && rt < t.rtEnd && 
-					mz >= t.mz - t.mzDiff && mz < t.mz + t.mzDiff &&
-					ip.apexHill.apex.intensity >= t.minApexInt &&
-					t.z == ip.z
-				})
+		  if (params.verbose)
+  			println("Matching target " + t.id)
+  	  
+  	  val (patternsStartIndx, patternsEndIndx) = DinoUtil.getMinxMaxIndx(patternMzs, t.mz, t.mzDiff)		  
+			val candidates = for {
+			  i <- patternsStartIndx until patternsEndIndx
+			  val ip = sortedPatterns(i)
+			  val rt = ip.apexHill.accurateApexRt(specTime)
+			  if (rt > t.rtStart && rt < t.rtEnd && 
+			        ip.apexHill.apex.intensity >= t.minApexInt && t.z == ip.z)
+		  } yield ip
 				
 			val targetMidRt = (t.rtStart + t.rtEnd) / 2
 			val best =
@@ -31,4 +36,5 @@ object TargetMatcher {
 				else None
 			Match(t, best)
 		}
+  }
 }
