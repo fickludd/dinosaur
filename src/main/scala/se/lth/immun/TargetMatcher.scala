@@ -11,10 +11,7 @@ object TargetMatcher {
 	  val apatterns = patterns.toArray
 	  val sortedPatterns = apatterns.sortBy(_.hills.head.total.centerMz)
 	  val patternMzs = sortedPatterns.map(_.hills.head.total.centerMz)
-		for (t <- targets) yield {
-		  if (params.verbose)
-  			println("Matching target " + t.id)
-  	  
+		for (t <- targets) yield {  	  
   	  val (patternsStartIndx, patternsEndIndx) = DinoUtil.getMinxMaxIndx(patternMzs, t.mz, t.mzDiff)		  
 			val candidates = for {
 			  i <- patternsStartIndx until patternsEndIndx
