@@ -140,8 +140,7 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 	  val (hillsStartIndx, hillsEndIndx) = DinoUtil.getMinxMaxIndx(hillsMzs, t.mz, t.mzDiff)
 		val inds = new ArrayBuffer[Int]
 		for (i <- hillsStartIndx until hillsEndIndx) {
-			val h = hills(i)
-			val hApexRt = h.accurateApexRt(specTime)
+			val hApexRt = hills(i).accurateApexRt(specTime)
 			if (hApexRt > t.rtStart && hApexRt < t.rtEnd)
 				inds += i
 		}
@@ -161,7 +160,7 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 		val patterns = 
 			for {
 				seed <- seeds
-				isopatInds <- extendSeed(seed, Nil, hills, t.z, hillsMzs, hillsScanIndices)
+				isopatInds <- extendSeed(seed, hills, t.z, hillsMzs, hillsScanIndices)
 			} yield (isopatInds)
 		if (patterns.isEmpty) Nil
 		else 
@@ -169,53 +168,40 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 	}
 	
 	
-	def extendSeed(seed:Int, inds:Seq[Int], hills:Array[Hill], z:Int, hillsMzs:Array[Double], hillsScanIndices:Array[(Int, Int)]):Option[IsotopePatternInds] = {
+	def extendSeed(seed:Int, hills:Array[Hill], z:Int, hillsMzs:Array[Double], hillsScanIndices:Array[(Int, Int)]):Option[IsotopePatternInds] = {
 		
-		val seedTot = hills(seed).total
-			
+		val seedCenterMz = hillsMzs(seed)
+		val seedErr2 = hills(seed).total.centerMzError * hills(seed).total.centerMzError
+		val massErrorSq = params.adv.deisoSigmas * params.adv.deisoSigmas * (
+					  2.5*seedErr2)
+		val err2 = DinoUtil.SULPHUR_SHIFT * DinoUtil.SULPHUR_SHIFT / (z*z) + massErrorSq
+		val err = Math.sqrt(err2)
+		
 		def extend2(dir:Int):Seq[Int] = {
-			var ii = seed+dir
 			var nIso = 1
-			val sHill = hills(seed)
-			val sTot = sHill.total
-			var m = sTot.centerMz + dir * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
-			var seedErr2 = sTot.centerMzError * sTot.centerMzError
+			var m = seedCenterMz + dir * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
 			var isoMissing = false
 			val isos = new ArrayBuffer[Int]
-			val alts = new ArrayBuffer[Int]
-			
-			val massErrorSq = params.adv.deisoSigmas * params.adv.deisoSigmas * (
-					  2.5*seedErr2)
-		  val err2 = DinoUtil.SULPHUR_SHIFT * DinoUtil.SULPHUR_SHIFT / (z*z) + massErrorSq
-			val err = Math.sqrt(err2)
-			updateHillIdx
-			
-			def updateHillIdx = {
-  			val (minIdx, maxIdx) = DinoUtil.getMinxMaxIndx(hillsMzs, m, err)
-	  		ii = if (dir > 0) minIdx else maxIdx
-	  		alts ++= (minIdx until maxIdx).filter(i => (math.min(hillsScanIndices(i)._2, sHill.scanIndex.last) > math.max(hillsScanIndices(i)._1, sHill.scanIndex.head)))
-	    }
-			
-			def evalAlts = {
-				if (alts.nonEmpty) {
-					val corrs = alts.map(a => (a,params.adv.deisoCorrCalc(hills(seed), hills(a))))
-					val maxCorr = corrs.maxBy(_._2)
-					alts.clear
-					if (maxCorr._2 >= params.adv.deisoCorr) {
-						isos += maxCorr._1
-						nIso += 1
-						m = seedTot.centerMz + dir * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
-						updateHillIdx
-					} else 
-						isoMissing = true
-				} else
-					isoMissing = true
-			}
 			
 			while (!isoMissing) {
-			  evalAlts
+			  val (minIdx, maxIdx) = DinoUtil.getMinxMaxIndx(hillsMzs, m, err)
+			  var maxCorr = (-1, -1.0)
+			  for (ii <- minIdx until maxIdx) {
+	  		  if (math.min(hillsScanIndices(ii)._2, hillsScanIndices(seed)._2) > 
+	  		      math.max(hillsScanIndices(ii)._1, hillsScanIndices(seed)._1)) {
+	  		    val corr = params.adv.deisoCorrCalc(hills(seed), hills(ii))
+	  		    if (corr > maxCorr._2) {
+	  		      maxCorr = (ii, corr)
+	  		    }
+	  		  }
+        }
+				if (maxCorr._2 >= params.adv.deisoCorr) {
+					isos += maxCorr._1
+					nIso += 1
+					m = seedCenterMz + dir * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
+				} else 
+					isoMissing = true
 			}
-			evalAlts
 			isos
 		}
 					
@@ -236,13 +222,13 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 			} else result
 		
 		val cleanResult =
-			if (z * seedTot.centerMz < 1000) {
+			if (z * seedCenterMz < 1000) {
 				val apex = oneMaxResult.maxBy(hills(_).total.intensity)
 				oneMaxResult.drop(oneMaxResult.indexOf(apex))
 			} else oneMaxResult
 		
 		val cleanProfile = cleanResult.map(hills(_).total.intensity)
-		val avgIsotopeDistr = Peptide.averagine((seedTot.centerMz - Constants.PROTON_WEIGHT)*z).getIsotopeDistribution()
+		val avgIsotopeDistr = Peptide.averagine((seedCenterMz - Constants.PROTON_WEIGHT)*z).getIsotopeDistribution()
 		
 		val alignment = params.adv.deisoAveragineStrategy(cleanProfile, avgIsotopeDistr, params)
 		
