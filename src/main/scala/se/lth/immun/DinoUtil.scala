@@ -300,7 +300,7 @@ object DinoUtil {
 		k*y1 + (1-k)*y0
 	}
 	
-	def getMinxMaxIndx(sortedArray:Array[Double], x:Double, tol:Double):(Int, Int) = {
+	def getMinMaxIndx(sortedArray:Array[Double], x:Double, tol:Double):(Int, Int) = {
   	val startIndx = math.abs(java.util.Arrays.binarySearch(sortedArray, x - tol)+1)
     val endIndx = math.min(sortedArray.length, math.abs(java.util.Arrays.binarySearch(sortedArray, x + tol)+1))
     (startIndx, endIndx)

@@ -22,6 +22,7 @@ class TargetDeisotoper(val params:DinosaurParams) extends Actor with Timeable {
 	
 	var hillsByMz:Array[Hill] = _
 	var hillsMzs:Array[Double] = _
+	var hillsRts:Array[Double] = _
 	var hillsScanIndices:Array[(Int, Int)] = _
 	var specTime:Seq[Double] = _
 	var customer:ActorRef = _
@@ -43,12 +44,13 @@ class TargetDeisotoper(val params:DinosaurParams) extends Actor with Timeable {
 			println("=== IN TARGETED MODE - BEWARE!!! ===")
 		  hillsByMz = hills.sortBy(_.total.centerMz)
 		  hillsMzs = hillsByMz.map(h => h.total.centerMz)
+		  hillsRts = hillsByMz.map(h => h.accurateApexRt(specTime))
 		  hillsScanIndices = hillsByMz.map(h => (h.scanIndex.head, h.scanIndex.last))
 		  
 		  if (params.verbose)
 			  println("deisotoping based on targets...")
 			
-      val batchTargetList = targets.grouped(targetBatchSize).toList
+      val batchTargetList = targets.sortBy(_.mz).grouped(targetBatchSize).toList
       for (i <- 0 until batchTargetList.length)
 			  toProcess += i -> batchTargetList(i)
 			
@@ -56,27 +58,30 @@ class TargetDeisotoper(val params:DinosaurParams) extends Actor with Timeable {
   			println("created " + batchTargetList.length + " target deisotoping batches")
 			processIfFree
 		
-		case Deisotoped(batchId, isotopes) =>
+		case Deisotoped(batchId, isotopes) =>      
 		  completedPatterns += isotopes
 		  beingProcessed -= batchId
 		  if (params.verbose)
-  		  println("batch deisotoping finished " + batchId)	
+  		  println("batch deisotoping finished " + batchId + ", found " + isotopes.length + " unique isotope patterns")	
 		  
 		  if (toProcess.isEmpty && beingProcessed.isEmpty) {
 				if (params.verbose)
 				  println("deisotoping finished")
 				
-				val isotopes = completedPatterns.flatten.sortBy(ip => (ip.hills.head.total.centerMz, ip.z, ip.apexHill.accurateApexRt(specTime)))
+				val isotopesAll = completedPatterns.flatten.sortBy(ip => (ip.hills.head.total.centerMz, ip.z, ip.apexHill.accurateApexRt(specTime)))
 				if (params.verbose)
-				  println("sorting finished, " + isotopes.length + " isotope patterns found")
+				  println("sorting finished, " + isotopesAll.length + " isotope patterns found")
 				
-				val uniqueIsotopes = isotopes.foldRight(List.empty[IsotopePattern]){ 
-          case (a, b) => 
-            if (!b.isEmpty && b(0).hills.head.total.centerMz == a.hills.head.total.centerMz && b(0).z == a.z && b(0).apexHill.accurateApexRt(specTime) == a.apexHill.accurateApexRt(specTime)) 
-              b 
-            else 
-              a :: b 
-        }
+				def filterUnique(isotopesSorted:Seq[IsotopePattern]) = 
+		      isotopesSorted.foldRight(List.empty[IsotopePattern]){ 
+            case (a, b) => 
+              if (!b.isEmpty && b(0).hills.head.total.centerMz == a.hills.head.total.centerMz && b(0).z == a.z && b(0).apexHill.accurateApexRt(specTime) == a.apexHill.accurateApexRt(specTime)) 
+                b 
+              else 
+                a :: b 
+          }
+				val uniqueIsotopes = filterUnique(isotopesAll)
+				
         if (params.verbose)
 				  println("filtered unique isotope patterns, " + uniqueIsotopes.length + " isotope patterns remaining")
 				
@@ -93,7 +98,7 @@ class TargetDeisotoper(val params:DinosaurParams) extends Actor with Timeable {
 			val (batchId, batchTargets) = toProcess.dequeue
 			beingProcessed += batchId
 			val a = context.actorOf(Props(new TargetBatchDeisotoper(params)))
-  		a ! BatchDeisotope(batchId, hillsByMz, batchTargets, hillsMzs, hillsScanIndices, specTime)
+  		a ! BatchDeisotope(batchId, hillsByMz, batchTargets, hillsMzs, hillsRts, hillsScanIndices, specTime)
 		}
 	}
 }
@@ -106,26 +111,37 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
   
   def receive = {
 		
-		case BatchDeisotope(batchId, hillsByMz, batchTargets, hillsMzs, hillsScanIndices, specTime) =>
-		  val (_, isotopes) = deisotope(hillsByMz, batchTargets, hillsMzs, hillsScanIndices, specTime)
-		  
-		  sender ! Deisotoped(batchId, isotopes)
+		case BatchDeisotope(batchId, hillsByMz, batchTargets, hillsMzs, hillsRts, hillsScanIndices, specTime) =>
+		  val (_, isotopes) = deisotope(hillsByMz, batchTargets, hillsMzs, hillsRts, hillsScanIndices)
+		  	  
+		  val uniqueIsotopes = filterUnique(isotopes.sortBy(ip => (ip.hills.head.total.centerMz, ip.z, ip.apexHill.accurateApexRt(specTime))), specTime)
+		  				  
+		  sender ! Deisotoped(batchId, uniqueIsotopes)
 		  context.stop(self)
   }
+  
+  def filterUnique(isotopes:Seq[IsotopePattern], specTime:Seq[Double]) = 
+    isotopes.foldRight(List.empty[IsotopePattern]){ 
+      case (a, b) => 
+        if (!b.isEmpty && b(0).hills.head.total.centerMz == a.hills.head.total.centerMz && b(0).z == a.z && b(0).apexHill.accurateApexRt(specTime) == a.apexHill.accurateApexRt(specTime)) 
+          b 
+        else 
+          a :: b 
+    }
   
 	def deisotope(hillsByMz:Array[Hill],
 			targets:Seq[Target],
 			hillsMzs:Array[Double],
-			hillsScanIndices:Array[(Int, Int)],
-			specTime:Seq[Double]			
+			hillsRts:Array[Double],
+			hillsScanIndices:Array[(Int, Int)]
 	):(Seq[Seq[Cluster.Edge]], Seq[IsotopePattern]) = {
 		
 		val targetPatterns = 
 			for (t <- targets) yield {
-				val monoisoHills = closeHills(hillsByMz, t, hillsMzs, specTime)
+				val monoisoHills = closeHills(hillsByMz, t, hillsMzs, hillsRts)
 				if (monoisoHills.nonEmpty) {
-					val patterns = getPatterns(monoisoHills, hillsByMz, t, hillsMzs, hillsScanIndices).map(ip =>
-						IsotopePattern(ip.inds.map(hillsByMz), ip.offset, ip.mostAbundNbr - ip.offset, ip.z, ip.averagineCorr))
+					val patterns = getPatterns(monoisoHills, hillsByMz, t, hillsMzs, hillsScanIndices).map(ipi =>
+						IsotopePattern(ipi.inds.map(hillsByMz), ipi.offset, ipi.mostAbundNbr - ipi.offset, ipi.z, ipi.averagineCorr))
 					
 					(t, patterns)
 				} else
@@ -136,12 +152,11 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 	}
 	
 	
-	def closeHills(hills:Array[Hill], t:Target, hillsMzs:Array[Double], specTime:Seq[Double]):Seq[Int] = {
-	  val (hillsStartIndx, hillsEndIndx) = DinoUtil.getMinxMaxIndx(hillsMzs, t.mz, t.mzDiff)
+	def closeHills(hills:Array[Hill], t:Target, hillsMzs:Array[Double], hillsRts:Array[Double]):Seq[Int] = {
+	  val (hillsStartIndx, hillsEndIndx) = DinoUtil.getMinMaxIndx(hillsMzs, t.mz, t.mzDiff)
 		val inds = new ArrayBuffer[Int]
 		for (i <- hillsStartIndx until hillsEndIndx) {
-			val hApexRt = hills(i).accurateApexRt(specTime)
-			if (hApexRt > t.rtStart && hApexRt < t.rtEnd)
+			if (hillsRts(i) > t.rtStart && hillsRts(i) < t.rtEnd)
 				inds += i
 		}
 		inds
@@ -160,8 +175,8 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 		val patterns = 
 			for {
 				seed <- seeds
-				isopatInds <- extendSeed(seed, hills, t.z, hillsMzs, hillsScanIndices)
-			} yield (isopatInds)
+				isoPatInds <- extendSeed(seed, hills, t.z, hillsMzs, hillsScanIndices)
+			} yield (isoPatInds)
 		if (patterns.isEmpty) Nil
 		else 
 			patterns.filter(ip => ip.inds.head == ip.seed)
@@ -177,14 +192,14 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 		val err2 = DinoUtil.SULPHUR_SHIFT * DinoUtil.SULPHUR_SHIFT / (z*z) + massErrorSq
 		val err = Math.sqrt(err2)
 		
-		def extend2(dir:Int):Seq[Int] = {
+		def extend2(direction:Int):Seq[Int] = {
 			var nIso = 1
-			var m = seedCenterMz + dir * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
+			var m = seedCenterMz + direction * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
 			var isoMissing = false
 			val isos = new ArrayBuffer[Int]
 			
 			while (!isoMissing) {
-			  val (minIdx, maxIdx) = DinoUtil.getMinxMaxIndx(hillsMzs, m, err)
+			  val (minIdx, maxIdx) = DinoUtil.getMinMaxIndx(hillsMzs, m, err)
 			  var maxCorr = (-1, -1.0)
 			  for (ii <- minIdx until maxIdx) {
 	  		  if (math.min(hillsScanIndices(ii)._2, hillsScanIndices(seed)._2) > 
@@ -198,14 +213,15 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 				if (maxCorr._2 >= params.adv.deisoCorr) {
 					isos += maxCorr._1
 					nIso += 1
-					m = seedCenterMz + dir * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
+					m = seedCenterMz + direction * nIso * DinoUtil.ISOTOPE_PATTERN_DIFF / z
 				} else 
 					isoMissing = true
 			}
 			isos
 		}
 					
-		val upMatches = extend2(1)
+	  val direction = 1
+		val upMatches = extend2(direction)
 		//val downMatches = extend2(-1)
 		val downMatches = Nil
 		
@@ -243,7 +259,7 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 	}
 }
 
-case class BatchDeisotope(batchId:Int, hillsByMz:Array[Hill], batchTargets:Seq[Target], hillsMzs:Array[Double], hillsScanIndices:Array[(Int, Int)], specTime:Seq[Double])
+case class BatchDeisotope(batchId:Int, hillsByMz:Array[Hill], batchTargets:Seq[Target], hillsMzs:Array[Double], hillsRts:Array[Double], hillsScanIndices:Array[(Int, Int)], specTime:Seq[Double])
 case class Deisotoped(batchId:Int, isotopes:Seq[IsotopePattern])
 case class TargetDeisotope(hills:Seq[Hill], targets:Seq[Target], specTime:Seq[Double])
 case class TargetDeisotopingComplete(clusters:Seq[Seq[Cluster.Edge]], patterns:Seq[IsotopePattern])

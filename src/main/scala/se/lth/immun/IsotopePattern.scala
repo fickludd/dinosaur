@@ -29,13 +29,17 @@ case class IsotopePattern(
 		val centerMz = hills.flatMap(_.centerMz)
 		val isotopeNbrs = hills.zipWithIndex.flatMap(t => t._1.centerMz.map(_ => t._2+isotopeOffset))
 		val n = hills.map(_.length).sum
+		
+		def isoMass(mz:Double, isotopeNbr:Int) =
+			z*(mz - Constants.PROTON_WEIGHT) - DinoUtil.ISOTOPE_PATTERN_DIFF * isotopeNbr
+	  
+		val mPreCalc = (0 until rawIntensities.length).map(i => (rawIntensities(i) * isoMass(centerMz(i), isotopeNbrs(i)) ) )
 		val ms = 
 			for (i <- 0 until nBoot) 
 			yield averageMass(
-					rawIntensities, 
-					centerMz, 
-					isotopeNbrs, 
-					Bootstrap.set(math.min(params.adv.maxBootSize, n), n, nBoot)
+					rawIntensities,
+					Bootstrap.set(math.min(params.adv.maxBootSize, n), n, nBoot),
+					mPreCalc
 				)
 		
 		val mass = ms.sum / nBoot
@@ -47,14 +51,17 @@ case class IsotopePattern(
 	
 	def averageMass(
 			rawInts:Seq[Double], 
-			mzs:Seq[Double], 
-			isotopeNbrs:Seq[Int], 
-			indices:Seq[Int]
+			indices:Seq[Int],
+			mPreCalc:Seq[Double]
 	):Double = {
-		def mass(mz:Double, isotopeNbr:Int) =
-			z*(mz - Constants.PROTON_WEIGHT) - DinoUtil.ISOTOPE_PATTERN_DIFF * isotopeNbr
-		val m = indices.map(i => (rawInts(i) * mass(mzs(i), isotopeNbrs(i)) ) ).sum
-		val norm = indices.map(rawInts).sum
+	  var m = 0.0
+	  var norm = 0.0
+	  var i = 0
+	  while (i < indices.length) {
+		  m += mPreCalc(indices(i))
+		  norm += rawInts(indices(i))
+		  i += 1
+		}
 		m / norm
 	}
 	
