@@ -132,6 +132,8 @@ class FeatureFinder(
 			if (targets.nonEmpty) TargetMatcher.matchTargets(targets, isotopes, reader.specTime)
 			else Nil
 		
+		params.targetMatchTime = timer.click
+		
 		if (params.targetsToReport) 
 			TargetReport.createReports(targetMatches, isotopes, hills, reader, streamer)
 		

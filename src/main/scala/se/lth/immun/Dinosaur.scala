@@ -107,6 +107,7 @@ object Dinosaur extends CLIApp {
 			println("          deisotope time: "+niceTiming(params.deisotopeTime))
 			println(" iso pattern report time: "+niceTiming(params.deisoReportTime))
 			println("         mass calib time: "+niceTiming(params.massCalibTime))
+			println("       target match time: "+niceTiming(params.targetMatchTime))
 			println("              write time: "+niceTiming(writeTime))
 			println
 			println("         deiso edge time: "+niceTiming(params.deisoEdgeTime))
