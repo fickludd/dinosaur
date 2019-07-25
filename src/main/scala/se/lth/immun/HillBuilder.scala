@@ -82,7 +82,8 @@ class HillBatch(
 
 
 
-class HillBuilderActorParallel(val params:DinosaurParams) extends Actor {
+// we only need a single Bootstrap object, since the part that uses it is non-parallel
+class HillBuilderActorParallel(val bootstrap:SplittableBootstrap, val params:DinosaurParams) extends Actor {
 	
 	implicit val pd = params
 	
@@ -213,7 +214,7 @@ class HillBuilderActorParallel(val params:DinosaurParams) extends Actor {
 			val tt2 = System.currentTimeMillis
 			val filtered = decomposed.filter(_.length >= params.adv.hillMinLength)
 			val tt3 = System.currentTimeMillis
-			val averaged = filtered.map(_.calcAverages)
+			val averaged = filtered.map(h => h.calcAverages(bootstrap))
 			val tt4 = System.currentTimeMillis
 			
 			if (params.verbose)

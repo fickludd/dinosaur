@@ -180,10 +180,10 @@ class Hill(
 	
 	
 	
-	def calcAverages(implicit params:DinosaurParams):Hill = {
+	def calcAverages(bootstrap:SplittableBootstrap)(implicit params:DinosaurParams):Hill = {
 		val totalIntensity = rawIntensity.sum
 			
-		val (tMz, tMzError) = calcTotalMz
+		val (tMz, tMzError) = calcTotalMz(bootstrap)
 		val totalMinMz = tMz - maxMzWidth/2 //minMz.min
 		val totalMaxMz = tMz + maxMzWidth/2 //maxMz.max
 		total = HillSummary(totalMinMz, totalMaxMz, totalIntensity, tMz, tMzError)
@@ -192,12 +192,12 @@ class Hill(
 	
 	
 	
-	def calcTotalMz(implicit params:DinosaurParams):(Double, Double) = {
+	def calcTotalMz(bootstrap:SplittableBootstrap)(implicit params:DinosaurParams):(Double, Double) = {
 		val weightedMz = new Array[Double](length)
 		for (i <- 0 until length)
 			weightedMz(i) = rawIntensity(i) * centerMz(i)
 		
-		Bootstrap.bootstrapWeightedAverage(weightedMz, rawIntensity, params.adv.hillNBoots, params.adv.maxBootSize)
+		bootstrap.bootstrapWeightedAverage(weightedMz, rawIntensity, params.adv.hillNBoots, params.adv.maxBootSize)
 	}
 	
 		

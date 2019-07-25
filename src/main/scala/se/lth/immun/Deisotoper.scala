@@ -65,13 +65,13 @@ object Deisotoper {
 case class Deisotope(hills:Seq[Hill], specTime:Seq[Double])
 case class DeisotopingComplete(clusters:Seq[Seq[Cluster.Edge]], patterns:Seq[IsotopePattern])
 
-class Deisotoper(val params:DinosaurParams) extends Actor with Timeable {
+class Deisotoper(val bootstrap:SplittableBootstrap, val params:DinosaurParams) extends Actor with Timeable {
 	
 	import Cluster._
 	
 	implicit val pd = params
 	
-	val toProcess 			= new Queue[(Int, Seq[Seq[Edge]])]
+	val toProcess 			= new Queue[(Int, (Seq[Seq[Edge]], SplittableBootstrap))]
 	val beingProcessed 		= new HashSet[Int]
 	val completedPatterns	= new ArrayBuffer[Seq[IsotopePattern]]
 	val clusters 			= new ArrayBuffer[Seq[Edge]]
@@ -144,8 +144,10 @@ class Deisotoper(val params:DinosaurParams) extends Actor with Timeable {
 			
 			params.deisoRipTime = timer.click
 			println("clusters ripped, n="+clusters.length)
-			for ((clusts, i) <- clusters.grouped(params.freqClusterDeconvolve).zipWithIndex) 
-				toProcess += i -> clusts
+			for ((clusts, i) <- clusters.grouped(params.freqClusterDeconvolve).zipWithIndex) {
+				val bootstrapSplitted = bootstrap.split()
+				toProcess += i -> (clusts, bootstrapSplitted)
+			}
 			
 			if (params.verbose)
 				println(" cluster   isotopes   comp time      time")
@@ -182,10 +184,10 @@ class Deisotoper(val params:DinosaurParams) extends Actor with Timeable {
 	
 	def processIfFree = {
 		while (toProcess.nonEmpty && beingProcessed.size < params.concurrency) {
-			val (id, clusters) = toProcess.dequeue
+			val (id, (clusters, bootstrap)) = toProcess.dequeue
 			beingProcessed += id
 			val a = context.actorOf(Props(new Deconvolver(params)))
-			a ! Deconvolve(id, clusters, hills)
+			a ! Deconvolve(id, clusters, hills, bootstrap)
 		}
 	}
 	
@@ -249,7 +251,7 @@ class Deisotoper(val params:DinosaurParams) extends Actor with Timeable {
 
 
 
-case class Deconvolve(id:Int, edgeLists:Seq[Seq[Cluster.Edge]], hills:Seq[Hill])
+case class Deconvolve(id:Int, edgeLists:Seq[Seq[Cluster.Edge]], hills:Seq[Hill], bootstrap:SplittableBootstrap)
 case class Deconvolved(id:Int, patterns:Seq[IsotopePattern], t:Long)
 
 class Deconvolver(val params:DinosaurParams) extends Actor {
@@ -257,14 +259,14 @@ class Deconvolver(val params:DinosaurParams) extends Actor {
 	implicit val pd = params
 	import Cluster._
 	
-	def deconvolve(edgeLists:Seq[Seq[Edge]], hills:Seq[Hill]) = 
-		edgeLists.flatMap(edgeList => Cluster(edgeList, hills).deconvolve())
+	def deconvolve(edgeLists:Seq[Seq[Edge]], hills:Seq[Hill], bootstrap:SplittableBootstrap) = 
+		edgeLists.flatMap(edgeList => Cluster(edgeList, hills).deconvolve(bootstrap))
 	
 	
 	def receive = {
-		case Deconvolve(id, edgeLists, hills) =>
+		case Deconvolve(id, edgeLists, hills, bootstrap) =>
 			val t0 = System.currentTimeMillis
-			val patterns = deconvolve(edgeLists, hills)
+			val patterns = deconvolve(edgeLists, hills, bootstrap)
 			sender ! Deconvolved(id, patterns, System.currentTimeMillis - t0)
 			context.stop(self)
 		

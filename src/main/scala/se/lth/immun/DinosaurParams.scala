@@ -22,6 +22,7 @@ class DinosaurParams(val name:String, val version:String) extends Params {
 	val writeQuantML	= false		## "set to output mzQuantML file" 
 	val outDir			= ""		## "output directory (by default same as input mzML)"
 	val outName			= ""		## "basename for output files (by default same as input mzML)"
+	val seed		= -1L		## "seed to use for bootstrapping of mass calibration (<0 means random)"
 	
 	val nReport			= 10		## "number of random assay to export control figure for"
 	val reportSeed		= -1L		## "seed to use for report assay selection (<0 means random)"
