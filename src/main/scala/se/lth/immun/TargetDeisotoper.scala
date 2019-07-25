@@ -213,14 +213,19 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 			}
 			isos
 		}
-					
+		
+		/* 
+		 * Whereas in global mode we also search for downMatches (instead of 
+		 * just upMatches), in targeted mode this could cause the reported 
+		 * precursor m/z to be lower than the one we 'target'. This lowers 
+		 * the sensitivity in a matches-between-runs setting and is therefore 
+		 * intentionally skipped here
+		 */
 	  val direction = 1
 		val upMatches = extend2(direction)
-		//val downMatches = extend2(-1)
-		val downMatches = Nil
 		
-		val result = downMatches.reverse ++ (seed +: upMatches)
-		val resSeedInd = downMatches.length
+		val result = seed +: upMatches
+		val resSeedInd = 0
 		val resultProfile = result.map(hills(_).apex.intensity)
 		
 		val minima = DinoUtil.localMinima(resultProfile, params.adv.deisoValleyFactor)
@@ -242,10 +247,16 @@ class TargetBatchDeisotoper(val params:DinosaurParams) extends Actor {
 		
 		val alignment = params.adv.deisoAveragineStrategy(cleanProfile, avgIsotopeDistr, params)
 		
+		/* 
+		 * In global mode we can drop some lower m/z isotopes if this causes 
+		 * better agreement with the averagine isotope pattern. In a 
+		 * matches-between-runs setting this again lowers the sensitivity 
+		 * and is therefore intentionally skipped
+		 */
 		alignment.map(a => IsotopePatternInds(
-				cleanResult,//.drop(math.max(0, -a.offset)), 
-				0, //math.max(0, a.offset), 
-				0, //avgIsotopeDistr.intensities.indexOf(avgIsotopeDistr.intensities.max), 
+				cleanResult,
+				0,
+				0,
 				z, 
 				a.corr,
 				seed

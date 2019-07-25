@@ -56,6 +56,9 @@ class DinosaurAdvParams extends Params {
 	val massCalcNBoots = 150			## "n bootstrap calculations for mass calcuation"
 	val chargePairPPM = 7.0				## "Max ppm diff to allow when assigning charge pairs"
 	
+	// target reporting
+	val nPrintTargets = 10				## "prints the first n targets to print to the command prompt in verbose mode"
+	
 	// report making
 	val reportTargetIntMax = 2e3		## "Max value for spectral heatmaps unless bigger real max"
 }

@@ -52,7 +52,7 @@ object Dinosaur extends CLIApp {
 			if (params.reportSeed >= 0) 	new Random(params.reportSeed)
 			else 							new Random
 		
-		val targets 	= (new TargetFile).read(params.targets, params.verbose)
+		val targets 	= (new TargetFile).read(params.targets, params.verbose, params.adv.nPrintTargets)
 		failOnError(params.setup(targets))
 		
 		val streamer 	= ReportStreamer(params, targets, outQcZipFile(params.outBase))
