@@ -39,7 +39,7 @@ class FeatureFinder(
 	val reader				= new MzMLReader(params, streamer)
 	val hillBuilderActor 	= actorSystem.actorOf(Props(new HillBuilderActorParallel(params)))
 	val deisotoper 			= actorSystem.actorOf(Props(new Deisotoper(params)))
-	val targetDeisotoper	= new TargetDeisotoper(params)
+	val targetDeisotoper	= actorSystem.actorOf(Props(new TargetDeisotoper(params)))
 	val chargePairer 		= new ChargePairer(params)
 	val nonLinMassCalibration = new NonLinMassCalibration(params)
 	
@@ -63,6 +63,7 @@ class FeatureFinder(
 	
 	def awaitHillBuilding = await({ case BuiltHills(hills) => hills })
 	def awaitDeisotoping = await({ case DeisotopingComplete(clusters, patterns) => (clusters, patterns) })
+	def awaitTargetDeisotoping = await({ case TargetDeisotopingComplete(clusters, patterns) => (clusters, patterns) })
 	
 	
 	
@@ -100,8 +101,10 @@ class FeatureFinder(
 			if (params.globalMode) {
 				actorInbox.send(deisotoper, Deisotope(hills, reader.specTime))
 				awaitDeisotoping
-			} else 
-				targetDeisotoper.deisotope(hills, targets, reader.specTime)
+			} else {
+			  actorInbox.send(targetDeisotoper, TargetDeisotope(hills, targets, reader.specTime))
+				awaitTargetDeisotoping
+		  }
 		println("deisotoping complete")
 		println("isotopes, n="+isotopes.length)
 		
@@ -128,6 +131,8 @@ class FeatureFinder(
 		val targetMatches =
 			if (targets.nonEmpty) TargetMatcher.matchTargets(targets, isotopes, reader.specTime)
 			else Nil
+		
+		params.targetMatchTime = timer.click
 		
 		if (params.targetsToReport) 
 			TargetReport.createReports(targetMatches, isotopes, hills, reader, streamer)

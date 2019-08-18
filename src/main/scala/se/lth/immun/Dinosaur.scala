@@ -52,7 +52,7 @@ object Dinosaur extends CLIApp {
 			if (params.reportSeed >= 0) 	new Random(params.reportSeed)
 			else 							new Random
 		
-		val targets 	= (new TargetFile).read(params.targets, params.verbose)
+		val targets 	= (new TargetFile).read(params.targets, params.verbose, params.adv.nPrintTargets)
 		failOnError(params.setup(targets))
 		
 		val streamer 	= ReportStreamer(params, targets, outQcZipFile(params.outBase))
@@ -107,6 +107,7 @@ object Dinosaur extends CLIApp {
 			println("          deisotope time: "+niceTiming(params.deisotopeTime))
 			println(" iso pattern report time: "+niceTiming(params.deisoReportTime))
 			println("         mass calib time: "+niceTiming(params.massCalibTime))
+			println("       target match time: "+niceTiming(params.targetMatchTime))
 			println("              write time: "+niceTiming(writeTime))
 			println
 			println("         deiso edge time: "+niceTiming(params.deisoEdgeTime))

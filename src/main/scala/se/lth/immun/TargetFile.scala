@@ -30,12 +30,12 @@ class TargetFile {
 	
 	
 	
-	def read(path:String, verbose:Boolean):Seq[Target] = {
+	def read(path:String, verbose:Boolean, nPrintTargets:Int):Seq[Target] = {
 		val targets = read(path)	
 		if (verbose) {
 			println("Target Reports (n=%d):".format(targets.length))
 			println("   mz     rtStart  rtEnd   minApexInt   id")
-			for (tr <- targets) 
+			for (tr <- targets.take(nPrintTargets)) 
 				println("%8.4f %6.2f %6.2f %6.1e %s %s".format(tr.mz, tr.rtStart, tr.rtEnd, tr.minApexInt, tr.group.getOrElse(""), tr.id))
 		}
 		targets

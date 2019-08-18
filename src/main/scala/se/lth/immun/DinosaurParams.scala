@@ -104,6 +104,7 @@ class DinosaurParams(val name:String, val version:String) extends Params {
 	var deisotopeTime 	= 0L
 	var deisoReportTime = 0L
 	var massCalibTime 	= 0L
+	var targetMatchTime 	= 0L
 	var deisoEdgeTime 	= 0L
 	var deisoRipTime	= 0L
 	var deisoDeconvolveTime = 0L
