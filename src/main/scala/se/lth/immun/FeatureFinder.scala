@@ -17,6 +17,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Queue
 import java.util.concurrent.TimeUnit
+import java.util.SplittableRandom
 
 case class ImTheCustomer()
 case class DinosaurResult(
@@ -36,10 +37,15 @@ class FeatureFinder(
 	val actorSystem 	= ActorSystem("actor-system")
 	val actorInbox 		= Inbox.create(actorSystem)
 	
+	val rng = 
+			if (params.seed >= 0) 	new SplittableRandom(params.seed)
+			else 							new SplittableRandom()
+	val bootstrap = new SplittableBootstrap(rng)
+	
 	val reader				= new MzMLReader(params, streamer)
-	val hillBuilderActor 	= actorSystem.actorOf(Props(new HillBuilderActorParallel(params)))
-	val deisotoper 			= actorSystem.actorOf(Props(new Deisotoper(params)))
-	val targetDeisotoper	= actorSystem.actorOf(Props(new TargetDeisotoper(params)))
+	val hillBuilderActor 	= actorSystem.actorOf(Props(new HillBuilderActorParallel(bootstrap, params)))
+	val deisotoper 			= actorSystem.actorOf(Props(new Deisotoper(bootstrap, params)))
+	val targetDeisotoper	= actorSystem.actorOf(Props(new TargetDeisotoper(bootstrap, params)))
 	val chargePairer 		= new ChargePairer(params)
 	val nonLinMassCalibration = new NonLinMassCalibration(params)
 	
@@ -102,9 +108,9 @@ class FeatureFinder(
 				actorInbox.send(deisotoper, Deisotope(hills, reader.specTime))
 				awaitDeisotoping
 			} else {
-			  actorInbox.send(targetDeisotoper, TargetDeisotope(hills, targets, reader.specTime))
+				actorInbox.send(targetDeisotoper, TargetDeisotope(hills, targets, reader.specTime))
 				awaitTargetDeisotoping
-		  }
+			}
 		println("deisotoping complete")
 		println("isotopes, n="+isotopes.length)
 		

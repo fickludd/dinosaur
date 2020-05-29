@@ -22,18 +22,18 @@ object Dinosaur extends CLIApp {
 	def main(args:Array[String]):Unit = {
 		
 		var properties = new Properties
-    	properties.load(this.getClass.getResourceAsStream("/pom.properties"))
-    	val name 		= properties.getProperty("pom.artifactId")
-    	val version 	= properties.getProperty("pom.version")
-    	val buildTime	= properties.getProperty("build.time")
-    	
-    	val params = new DinosaurParams(name, version)
-    	
+		properties.load(this.getClass.getResourceAsStream("/pom.properties"))
+		val name 		= properties.getProperty("pom.artifactId")
+ 		val version 	= properties.getProperty("pom.version")
+		val buildTime	= properties.getProperty("build.time")
+			
+		val params = new DinosaurParams(name, version)
+			
 		params.startTime 	= System.currentTimeMillis
 		
 		failOnError(parseArgs(name, version, args, params, List("mzML"), None))
-    	failOnError(parseParams(params.adv, params.advParams.value))
-    	
+		failOnError(parseParams(params.adv, params.advParams.value))
+			
 		if (params.advHelp) {
 			println(usage(name, version, args, params.adv, List("mzML"), None))
 			System.exit(0)
@@ -43,9 +43,9 @@ object Dinosaur extends CLIApp {
 		val (outDir, outName) = params.outBase
 		
 		println(name + " "+version + "    built:"+buildTime)
-    	println("  mzML file: " + params.mzML.value)
-    	println("    out dir: " + outDir)
-    	println("   out name: " + outName)
+		println("  mzML file: " + params.mzML.value)
+		println("    out dir: " + outDir)
+		println("   out name: " + outName)
 		println()
 		
 		params.reportRandom = 

@@ -3,7 +3,6 @@ package se.lth.immun
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 
-
 import se.lth.immun.chem.Peptide
 import se.lth.immun.chem.Constants
 import se.lth.immun.chem.IsotopeDistribution
@@ -79,16 +78,15 @@ class Cluster(
 	val intensities = hills.map(_.total.intensity)
 	val apexIntensities = hills.map(_.apex.intensity)
 	
-	
-	
 	def deconvolve(
+			bootstrap:SplittableBootstrap,
 			inds:Seq[Int] = 0 until hills.length
 	):List[IsotopePattern] = { 
 		if (inds.map(hills).exists(h => params.closeToDebug(h.total.centerMz)))
 			{ val k = 1 }
 		getBestPattern(inds) match {
 			case Some((ip, indsLeft)) =>
-				IsotopePattern(ip.inds.map(hills), ip.offset, ip.mostAbundNbr - ip.offset, ip.z, ip.averagineCorr) :: deconvolve(indsLeft)
+				IsotopePattern(ip.inds.map(hills), ip.offset, ip.mostAbundNbr - ip.offset, ip.z, ip.averagineCorr, bootstrap) :: deconvolve(bootstrap, indsLeft)
 			case None =>
 				Nil
 		}

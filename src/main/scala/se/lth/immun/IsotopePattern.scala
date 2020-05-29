@@ -7,7 +7,8 @@ case class IsotopePattern(
 		val isotopeOffset:Int, 
 		val mostAbundNbr:Int, 
 		val z:Int, 
-		val averagineCorr:Double
+		val averagineCorr:Double,
+		val bootstrap:SplittableBootstrap
 )(implicit params:DinosaurParams) {
 	
 	def length 		= hills.length
@@ -38,7 +39,7 @@ case class IsotopePattern(
 			for (i <- 0 until nBoot) 
 			yield averageMass(
 					rawIntensities,
-					Bootstrap.set(math.min(params.adv.maxBootSize, n), n, nBoot),
+					bootstrap.set(math.min(params.adv.maxBootSize, n), n, nBoot),
 					mPreCalc
 				)
 		
