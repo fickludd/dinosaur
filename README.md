@@ -22,7 +22,7 @@ This README contains the following topics
 Getting started with Dinosaur
 =============================
 
-To run Dinosaur `Java 1.6` or greater is needed. The only required input data is the MS data in the mzML-format. We recommend using ProteoWizard to produce the mzML. 
+To run Dinosaur `Java 1.8` or greater is needed (For Dinosaur versions up to 1.1.4, `Java 1.6` or higher is needed). The only required input data is the MS data in the mzML-format. We recommend using ProteoWizard to produce the mzML. 
 
 Dinosaur can be acquired either by downloading a pre-compiled release (click the Release tag), or by downloadning the source and compiling.
 
