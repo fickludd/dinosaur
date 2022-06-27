@@ -45,7 +45,7 @@ object DinoUtil {
 	 */
 	def localMinPositions(y:Seq[Double]):Seq[Int] = {
 		(2 until (y.length - 2)).filter(i =>
-			isMin(y(i-2), y(i-2), y(i), y(i+1), y(i+2))
+			isMin(y(i-2), y(i-1), y(i), y(i+1), y(i+2))
 		)
 	}
 	
